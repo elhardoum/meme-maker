@@ -1,0 +1,98 @@
+#!./env/bin/python
+
+class meme_maker():
+    def __init__(self):
+        self.args = None
+        self.parse_args()
+        self.run()
+
+    """
+    Parses CLI arguments. Used to assert all arguments are handles correctly.
+    """
+    def parse_args(self):
+        import argparse
+
+        parser = argparse.ArgumentParser()
+
+        # required arguments
+        required = parser.add_argument_group('required arguments')
+        required.add_argument('--text-1', metavar='', help='Top text', type=str, required=True)
+        required.add_argument('--text-2', metavar='', help='Bottom text', type=str, required=True)
+        required.add_argument('--source', metavar='', help='Meme template image (soure) path', type=lambda s: self.source_validator(s), required=True)
+
+        # optional
+        required.add_argument('--dest', metavar='', help='Distination image file path', type=str, required=False)
+
+        # parse arguments
+        self.args = vars(parser.parse_args())
+
+    def source_validator(self, source):
+        from argparse import ArgumentTypeError
+
+        if not source or str != type(source):
+            raise ArgumentTypeError("%s is an invalid image source path" % str(source))
+
+        from PIL import Image
+
+        try:
+            self.img = Image.open( source )
+        except Exception as e:
+            raise ArgumentTypeError("Error loading image %s: %s" % (str(source), str(e)))
+
+        return source
+
+    def run(self):
+        if not hasattr(self, 'img') or not self.img:
+            print ( 'Error, arguments not parsed correctly.' )
+            return
+
+        from PIL import ImageFont, ImageDraw
+
+        font_path = './Impact.ttf'
+        imageSize = self.img.size
+        draw = ImageDraw.Draw(self.img)
+
+        # find biggest font size that works
+        fontSize = int(imageSize[1]/5)
+        font = ImageFont.truetype(font_path, fontSize)
+        topTextSize = font.getsize(self.args['text_1'].upper())
+        bottomTextSize = font.getsize(self.args['text_2'].upper())
+        while topTextSize[0] > imageSize[0]-20 or bottomTextSize[0] > imageSize[0]-20:
+            fontSize = fontSize - 1
+            font = ImageFont.truetype(font_path, fontSize)
+            topTextSize = font.getsize(self.args['text_1'].upper())
+            bottomTextSize = font.getsize(self.args['text_2'].upper())
+
+        # find top centered position for top text
+        topTextPositionX = (imageSize[0]/2) - (topTextSize[0]/2)
+        topTextPositionY = 0
+        topTextPosition = (topTextPositionX, topTextPositionY)
+
+        # find bottom centered position for bottom text
+        bottomTextPositionX = (imageSize[0]/2) - (bottomTextSize[0]/2)
+        bottomTextPositionY = imageSize[1] - bottomTextSize[1] -10
+        bottomTextPosition = (bottomTextPositionX, bottomTextPositionY)
+
+        # draw outlines
+        outlineRange = int(fontSize/15)
+        for x in range(-outlineRange, outlineRange+1):
+            for y in range(-outlineRange, outlineRange+1):
+                draw.text((topTextPosition[0]+x, topTextPosition[1]+y), self.args['text_1'].upper(), 'black', font=font)
+                draw.text((bottomTextPosition[0]+x, bottomTextPosition[1]+y), self.args['text_2'].upper(), 'black', font=font)
+
+        draw.text(topTextPosition, self.args['text_1'].upper(), 'white', font=font)
+        draw.text(bottomTextPosition, self.args['text_2'].upper(), 'white', font=font)
+
+        if 'dest' in self.args and self.args['dest']:
+            try:
+                self.img.save( self.args['dest'] )
+                from os.path import realpath
+                print ( 'Image saved to %s' % ( str( realpath( self.args['dest'] ) ) ) )
+            except Exception as e:
+                print ( 'Error saving image to destination (%s): %s', ( self.args['dest'], str(e) ) )
+        else:
+            # show in a window
+            self.img.show()
+
+if '__main__' == __name__:
+    meme_maker = meme_maker()
