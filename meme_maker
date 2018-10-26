@@ -3,6 +3,7 @@
 class meme_maker():
     def __init__(self):
         self.args = None
+        self.img = None
         self.parse_args()
         self.run()
 
@@ -42,7 +43,7 @@ class meme_maker():
         return source
 
     def run(self):
-        if not hasattr(self, 'img') or not self.img:
+        if not self.img:
             print ( 'Error, arguments not parsed correctly.' )
             return
 
