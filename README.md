@@ -16,6 +16,8 @@ required arguments:
 
 In a virtual environment, run `pip install -r ./requirements.txt`. There's only 1 dependency required, which is Python Pillow lib.
 
+Make sure to `chmod +x ./meme_maker` or at least run it with Python entrepreneur, e.g `python meme_maker [...]`.
+
 ## Example
 
 ```bash
