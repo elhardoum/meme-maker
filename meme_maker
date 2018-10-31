@@ -53,36 +53,56 @@ class meme_maker():
         imageSize = self.img.size
         draw = ImageDraw.Draw(self.img)
 
-        # find biggest font size that works
+        lines1 = [ x.strip() for x in self.args['text_1'].upper().split('\n') if x.strip() ]
+        lines2 = [ x.strip() for x in self.args['text_2'].upper().split('\n') if x.strip() ]
+
         fontSize = int(imageSize[1]/5)
         font = ImageFont.truetype(font_path, fontSize)
-        topTextSize = font.getsize(self.args['text_1'].upper())
-        bottomTextSize = font.getsize(self.args['text_2'].upper())
-        while topTextSize[0] > imageSize[0]-20 or bottomTextSize[0] > imageSize[0]-20:
-            fontSize = fontSize - 1
-            font = ImageFont.truetype(font_path, fontSize)
-            topTextSize = font.getsize(self.args['text_1'].upper())
-            bottomTextSize = font.getsize(self.args['text_2'].upper())
+        fontSizes = []
+        textSizes = {}
 
-        # find top centered position for top text
-        topTextPositionX = (imageSize[0]/2) - (topTextSize[0]/2)
-        topTextPositionY = 0
-        topTextPosition = (topTextPositionX, topTextPositionY)
+        for line in lines1 + lines2:
+            textSize = font.getsize(line)
+            while textSize[0] > imageSize[0]-20:
+                fontSize = fontSize - 1
+                font = ImageFont.truetype(font_path, fontSize)
+                textSize = textSizes[ fontSize ] = font.getsize(line)
+                fontSizes.append( fontSize )
 
-        # find bottom centered position for bottom text
-        bottomTextPositionX = (imageSize[0]/2) - (bottomTextSize[0]/2)
-        bottomTextPositionY = imageSize[1] - bottomTextSize[1] -10
-        bottomTextPosition = (bottomTextPositionX, bottomTextPositionY)
+        font = ImageFont.truetype( font_path, min(fontSizes) )
 
-        # draw outlines
-        outlineRange = int(fontSize/15)
-        for x in range(-outlineRange, outlineRange+1):
-            for y in range(-outlineRange, outlineRange+1):
-                draw.text((topTextPosition[0]+x, topTextPosition[1]+y), self.args['text_1'].upper(), 'black', font=font)
-                draw.text((bottomTextPosition[0]+x, bottomTextPosition[1]+y), self.args['text_2'].upper(), 'black', font=font)
+        index=0
+        for line in lines1:
+            # find top centered position for top text
+            topTextPositionX = (imageSize[0]/2) - (font.getsize(line)[0]/2)
+            topTextPositionY = index *font.getsize(line)[1]
+            topTextPosition = (topTextPositionX, topTextPositionY)
 
-        draw.text(topTextPosition, self.args['text_1'].upper(), 'white', font=font)
-        draw.text(bottomTextPosition, self.args['text_2'].upper(), 'white', font=font)
+            # draw outlines
+            outlineRange = int(fontSize/15)
+            for x in range(-outlineRange, outlineRange+1):
+                for y in range(-outlineRange, outlineRange+1):
+                    draw.text((topTextPosition[0]+x, topTextPosition[1]+y), line, 'black', font=font)
+
+            draw.text(topTextPosition, line, 'white', font=font)
+            index += 1
+
+        index=0
+        for line in reversed(lines2):
+            # find top centered position for top text
+            bottomTextPositionX = (imageSize[0]/2) - (font.getsize(line)[0]/2)
+            bottomTextPositionY = imageSize[1] - font.getsize(line)[1] *(index+1) -5
+            bottomTextPositionY -= 3 if index else 0
+            bottomTextPosition = (bottomTextPositionX, bottomTextPositionY)
+
+            # draw outlines
+            outlineRange = int(fontSize/15)
+            for x in range(-outlineRange, outlineRange+1):
+                for y in range(-outlineRange, outlineRange+1):
+                    draw.text((bottomTextPosition[0]+x, bottomTextPosition[1]+y), line, 'black', font=font)
+
+            draw.text(bottomTextPosition, line, 'white', font=font)
+            index += 1
 
         if 'dest' in self.args and self.args['dest']:
             try:
